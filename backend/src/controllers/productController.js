@@ -1,10 +1,13 @@
 const Product = require("../models/Product");
 const socketio = require("../config/socketio");
+const { generateTokenAndSend } = require('../middleware/genarattokenandcookies');
+const cloudinary = require("../config/cloudinary"); 
+const asyncHandler = require('express-async-handler');
 
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
-exports.getProducts = async (req, res) => {
+exports.getProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find();
     res.status(200).json({
@@ -18,12 +21,12 @@ exports.getProducts = async (req, res) => {
       error: "Server Error",
     });
   }
-};
+});
 
 // @desc    Get single product
 // @route   GET /api/products/:id
 // @access  Public
-exports.getProduct = async (req, res) => {
+exports.getProduct = asyncHandler(async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
 
@@ -44,16 +47,41 @@ exports.getProduct = async (req, res) => {
       error: "Server Error",
     });
   }
-};
+});
 
 // @desc    Create a product (admin only in a real app)
 // @route   POST /api/products
 // @access  Private
-exports.createProduct = async (req, res) => {
+exports.createProduct = asyncHandler(async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    // Upload images to Cloudinary
+    const imageUrls = [];
+    for (const file of req.files) {
+      // Decompress the gzipped file before uploading to Cloudinary
+      const decompressedBuffer = await new Promise((resolve, reject) => {
+        zlib.gunzip(file.buffer, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
 
-    // Notify all clients about new product
+      const result = await cloudinary.uploader.upload(
+        `data:${file.mimetype.replace('.gz', '')};base64,${decompressedBuffer.toString('base64')}`,
+        {
+          folder: 'products',
+          resource_type: 'auto'
+        }
+      );
+      imageUrls.push(result.secure_url);
+    }
+
+    const productData = {
+      ...req.body,
+      imageUrl: imageUrls
+    };
+
+    const product = await Product.create(productData);
+
     socketio.getIO().emit("products", { action: "create", product });
 
     res.status(201).json({
@@ -61,17 +89,18 @@ exports.createProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
+    console.error('Error creating product:', error);
     res.status(500).json({
       success: false,
       error: "Server Error",
     });
   }
-};
+});
 
 // @desc    Update product stock
 // @route   PUT /api/products/:id/stock
 // @access  Private
-exports.updateProductStock = async (req, res) => {
+exports.updateProductStock = asyncHandler(async (req, res) => {
   try {
     const { newStock } = req.body;
 
@@ -95,7 +124,6 @@ exports.updateProductStock = async (req, res) => {
       });
     }
 
-    // Notify all clients about stock update
     socketio.getIO().emit("products", { action: "update", product });
 
     res.status(200).json({
@@ -108,4 +136,40 @@ exports.updateProductStock = async (req, res) => {
       error: "Server Error",
     });
   }
-};
+});
+
+// @desc    Delete product
+// @route   DELETE /api/products/:id
+// @access  Private
+exports.deleteProduct = asyncHandler(async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: "Product not found",
+      });
+    }
+
+    for (const imageUrl of product.imageUrl) {
+      const publicId = imageUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`products/${publicId}`);
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    socketio.getIO().emit("products", { action: "delete", product });
+
+    res.status(200).json({
+      success: true,
+      data: {},
+    });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({
+      success: false,
+      error: "Server Error",
+    });
+  }
+});

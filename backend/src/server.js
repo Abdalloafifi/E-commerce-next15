@@ -4,6 +4,8 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/error");
 const socketConfig = require("./config/socketio");
+const securityMiddleware = require('./middleware/securityMiddleware');
+
 
 // Load env vars
 dotenv.config();
@@ -14,9 +16,13 @@ connectDB();
 // Route files
 const productRoutes = require("./routes/productRoutes");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 
+
 const app = express();
+securityMiddleware(app)
+
 
 // Body parser
 app.use(express.json());
@@ -34,6 +40,7 @@ app.use(
 // Mount routers
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/cart", cartRoutes);
 
 // Error handler middleware

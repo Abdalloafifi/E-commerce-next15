@@ -22,10 +22,10 @@ const productSchema = mongoose.Schema({
     min: [0, "Stock cannot be negative"],
     default: 0,
   },
-  imageUrl: {
+ imageUrl: [{
     type: String,
-    default: "https://via.placeholder.com/150",
-  },
+    required: true,
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
