@@ -1,7 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middleware/verifytoken');
+const { protect } = require('../middleware/auth');
 const {
   getUserProfile,
   updateProfile,
@@ -9,10 +9,10 @@ const {
 } = require('../controllers/userController');
 
 router.route('/profile')
-  .get(verifyToken, getUserProfile)
-  .put(verifyToken, updateProfile);
+  .get(protect, getUserProfile)
+  .put(protect, updateProfile);
 
 router.route('/change-password')
-  .put(verifyToken, changePassword);
+  .put(protect, changePassword);
 
 module.exports = router;

@@ -7,8 +7,8 @@ const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const xssClean = require('xss-clean');
 const compression = require('compression');
-const useragent = require('express-useragent');
 const morgan = require('morgan');
+const useragent = require('express-useragent');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 
@@ -72,29 +72,16 @@ module.exports = (app) => {
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 100,
     message: 'محاولات تسجيل دخول كثيرة جدًا',
   });
 
   app.use('/api/auth', authLimiter);
   app.use(generalLimiter); // لكل المسارات الأخرى
 
-  // CSRF Protection
-  const csrfProtection = csrf({ cookie: true });
-  app.use(csrfProtection);
-  app.use((req, res, next) => {
-    res.cookie('csrf_token', req.csrfToken(), {
-      httpOnly: false,
-      sameSite: 'Strict',
-      secure: process.env.NODE_ENV === 'production',
-    });
-    next();
-  });
-
 
 
   // Compression
-  app.use(compression());
 
   // User Agent Detection
   app.use(useragent.express());

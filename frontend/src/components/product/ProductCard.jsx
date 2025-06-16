@@ -36,13 +36,20 @@ const ProductCard = ({ product }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="relative h-48 w-full">
-        <Image
-          src={product.imageUrl}
-          alt={product.name}
-          fill
-          className="object-contain absolute"
-          loading="lazy"
-        />
+        {Array.isArray(product.imageUrl) &&
+          product.imageUrl
+            .filter((url) => typeof url === "string" && url.trim() !== "")
+            .map((url, index) => (
+              <Image
+                key={index}
+                src={url}
+                alt={product.name}
+                fill
+                className="object-contain absolute"
+                loading="lazy"
+              />
+            ))}
+
       </div>
 
       <div className="p-4">
@@ -59,9 +66,8 @@ const ProductCard = ({ product }) => {
         <div className="flex justify-between items-center mt-3">
           <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
           <span
-            className={`text-sm ${
-              product.stock > 0 ? "text-green-600" : "text-red-600"
-            }`}
+            className={`text-sm ${product.stock > 0 ? "text-green-600" : "text-red-600"
+              }`}
           >
             {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
           </span>

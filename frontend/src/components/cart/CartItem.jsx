@@ -20,12 +20,20 @@ const CartItem = ({ item }) => {
   return (
     <div className="flex items-center py-4 border-b">
       <div className="relative h-20 w-20 flex-shrink-0">
-        <Image
-          src={item.imageUrl || "/api/placeholder/80/80"}
-          alt={item.name}
-          fill
-          className="object-cover rounded"
-        />
+        {Array.isArray(item.imageUrl) &&
+          item.imageUrl
+            .filter((url) => typeof url === "string" && url.trim() !== "")
+            .map((url, index) => (
+              <Image
+                key={index}
+                src={url}
+                alt={item.name}
+                fill
+                className="object-cover absolute rounded"
+              />
+            ))}
+
+        
       </div>
 
       <div className="ml-4 flex-grow">

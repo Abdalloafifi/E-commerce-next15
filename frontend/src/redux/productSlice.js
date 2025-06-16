@@ -10,10 +10,13 @@ export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/products`);
+      const response = await axios.get(`${API_URL}/products`, {
+        withCredentials: true, // 👈 Send cookies
+      });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
+    
     }
   }
 );
@@ -23,13 +26,16 @@ export const fetchProduct = createAsyncThunk(
   "products/fetchProduct",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/products/${id}`);
+      const response = await axios.get(`${API_URL}/products/${id}`, {
+        withCredentials: true, // 👈 Send cookies
+      });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
   }
 );
+
 
 const productSlice = createSlice({
   name: "products",

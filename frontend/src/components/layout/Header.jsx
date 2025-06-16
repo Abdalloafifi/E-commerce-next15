@@ -63,7 +63,11 @@ export default function Header() {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm">{user?.name || "User"}</span>
+                <Link href="/profiles"  className={`relative hover:text-blue-600 ${
+                pathname === "/profiles" ? "text-blue-600 font-medium" : ""
+              }`}>
+                  {user?.name || "User"}
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="text-sm hover:text-red-600"

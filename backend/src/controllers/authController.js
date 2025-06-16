@@ -2,7 +2,6 @@ const User = require("../models/User");
 const passwordComplexity = require("joi-password-complexity");
 const xss = require('xss');
 const Joi = require('joi');
-const { generateTokenAndSend } = require('../middleware/genarattokenandcookies');
 const asyncHandler = require('express-async-handler');
 
 
@@ -12,17 +11,19 @@ const asyncHandler = require('express-async-handler');
 exports.register = asyncHandler(async (req, res) => {
   try {
     const { name, email, password } = req.body;
-const passwordComplexitySchema = Joi.object({
-  password: passwordComplexity({
-    min: 8,
-    max: 30,
-    lowerCase: 1,
-    upperCase: 1,
-    numeric: 1,
-    symbol: 1,
-    requirementCount: 4,
-  }),
-});
+
+    const passwordComplexitySchema = Joi.object({
+      password: passwordComplexity({
+        min: 8,
+        max: 30,
+        lowerCase: 1,
+        upperCase: 1,
+        numeric: 1,
+        symbol: 1,
+        requirementCount: 4,
+      }),
+    });
+
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -38,21 +39,24 @@ const passwordComplexitySchema = Joi.object({
       });
     }
 
-    // Create user
+    // Create user with actual password
     const user = await User.create({
       name: xss(name),
       email: xss(email),
-      password: xss(passwordComplexitySchema),
+      password: xss(password), // ✅ الصح هنا
     });
-    generateTokenAndSend(user, res);
+
+    sendTokenResponse(user, 201, res);
 
   } catch (error) {
     res.status(500).json({
       success: false,
       error: "Server Error",
     });
+    console.log(error);
   }
 });
+
 
 // @desc    Login user
 // @route   POST /api/auth/login
@@ -75,12 +79,15 @@ exports.login = asyncHandler(async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: "Invalid credentials",
+        error: "Invalid credential",
       });
     }
+console.log("Entered password:", password);
+console.log("Stored password:", user.password);
 
     // Check if password matches
-    const isMatch = await user.matchPassword(xss(password));
+const isMatch = await user.matchPassword(password);
+    
 
     if (!isMatch) {
       return res.status(401).json({
@@ -88,8 +95,8 @@ exports.login = asyncHandler(async (req, res) => {
         error: "Invalid credentials",
       });
     }
-
-    generateTokenAndSend(user, res);
+    // Generate token and send response
+    sendTokenResponse(user, 200, res);
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -118,3 +125,25 @@ exports.getMe = asyncHandler(async (req, res) => {
     });
   }
 });
+
+
+const sendTokenResponse = (user, statusCode, res) => {
+  // Create token
+  const token = user.getSignedJwtToken();
+
+  const options = {
+    expires: new Date(
+      Date.now() + process.env.JWT_EXPIRE * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    options.secure = true;
+  }
+
+  res.status(statusCode).json({
+    success: true,
+    token,
+  });
+};

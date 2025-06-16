@@ -20,7 +20,7 @@ const userSchema = mongoose.Schema({
     type: String,
     required: [true, "Please add a password"],
     minlength: 6,
-    select: false,
+    // select: false,
   },
   createdAt: {
     type: Date,
@@ -28,15 +28,16 @@ const userSchema = mongoose.Schema({
   },
 });
 
-// Encrypt password using bcrypt
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-    next();
+    return next(); // لازم return هنا علشان يخرج من الـ middleware
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next(); // مهم تكمل بـ next بعد التعديل
 });
+
 
 // Sign JWT and return
 userSchema.methods.getSignedJwtToken = function () {

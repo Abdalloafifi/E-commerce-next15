@@ -45,13 +45,21 @@ const ProductDetail = ({ product }) => {
       <div className="md:flex">
         <div className="md:w-1/2">
           <div className="relative h-80 w-full">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-contain absolute"
-              loading="lazy"
-            />
+
+            {Array.isArray(product.imageUrl) &&
+              product.imageUrl
+                .filter((url) => typeof url === "string" && url.trim() !== "")
+                .map((url, index) => (
+                  <Image
+                    key={index}
+                    src={url}
+                    alt={product.name}
+                    fill
+                    className="object-contain absolute"
+                    loading="lazy"
+                  />
+                ))}
+
           </div>
         </div>
 
@@ -62,19 +70,18 @@ const ProductDetail = ({ product }) => {
           </p>
 
           <div
-            className={`mb-4 inline-block px-3 py-1 rounded ${
-              product.stock > 10
+            className={`mb-4 inline-block px-3 py-1 rounded ${product.stock > 10
                 ? "bg-green-100 text-green-800"
                 : product.stock > 0
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-red-100 text-red-800"
-            }`}
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}
           >
             {product.stock > 10
               ? `In Stock (${product.stock})`
               : product.stock > 0
-              ? `Low Stock (${product.stock})`
-              : "Out of Stock"}
+                ? `Low Stock (${product.stock})`
+                : "Out of Stock"}
           </div>
 
           <p className="text-gray-600 mb-6">{product.description}</p>
@@ -119,8 +126,8 @@ const ProductDetail = ({ product }) => {
             {isOutOfStock
               ? "Out of Stock"
               : isMaxStock
-              ? "Max Stock Reached"
-              : "Add to Cart"}
+                ? "Max Stock Reached"
+                : "Add to Cart"}
           </button>
 
           {existingItem && (

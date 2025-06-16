@@ -5,6 +5,9 @@ const connectDB = require("./config/db");
 const errorHandler = require("./middleware/error");
 const socketConfig = require("./config/socketio");
 const securityMiddleware = require('./middleware/securityMiddleware');
+const cookieParser = require("cookie-parser");
+const compression = require('compression');
+const morgan = require('morgan');
 
 
 // Load env vars
@@ -21,19 +24,26 @@ const cartRoutes = require("./routes/cartRoutes");
 
 
 const app = express();
-securityMiddleware(app)
+// securityMiddleware(app)
 
 
 // Body parser
+app.use(morgan('dev'));
+  app.use(compression());
+    
 app.use(express.json());
+  app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+     exposedHeaders: ['auth-token'],
+
   })
 );
 

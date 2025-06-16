@@ -4,7 +4,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const API_URL =  "http://localhost:3003/api";
+const API_URL = "http://localhost:3003/api";
 
 // Register user
 export const register = createAsyncThunk(
@@ -20,7 +20,8 @@ export const register = createAsyncThunk(
       const response = await axios.post(
         `${API_URL}/auth/register`,
         userData,
-        config
+        config,
+        { withCredentials: true }
       );
 
       if (response.data.token) {
@@ -48,7 +49,8 @@ export const login = createAsyncThunk(
       const response = await axios.post(
         `${API_URL}/auth/login`,
         userData,
-        config
+        config,
+        { withCredentials: true }
       );
 
       if (response.data.token) {
@@ -75,9 +77,67 @@ export const getUserProfile = createAsyncThunk(
         },
       };
 
-      const response = await axios.get(`${API_URL}/auth/me`, config);
+      const response = await axios.get(`${API_URL}/user/profile`, config, {
+        withCredentials: true,
+      });
 
       return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Update user profile
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (profileData, { rejectWithValue, getState }) => {
+    try {
+      const { auth } = getState();
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+      };
+
+      const response = await axios.put(
+        `${API_URL}/user/profile`,
+        profileData,
+        config,
+        { withCredentials: true }
+      );
+
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Change password
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (passwordData, { rejectWithValue, getState }) => {
+    try {
+      const { auth } = getState();
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+      };
+
+      const response = await axios.put(
+        `${API_URL}/user/change-password`,
+        passwordData,
+        config,
+        { withCredentials: true }
+      );
+
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -156,6 +216,31 @@ const authSlice = createSlice({
       .addCase(getUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error || "Failed to get user profile";
+      })
+      // Update profile
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error || "Failed to update profile";
+      })
+      // Change password
+      .addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error || "Failed to change password";
       });
   },
 });
